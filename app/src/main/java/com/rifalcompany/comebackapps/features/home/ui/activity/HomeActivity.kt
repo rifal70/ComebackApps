@@ -1,26 +1,24 @@
 package com.rifalcompany.comebackapps.features.home.ui.activity
 
-import android.app.Dialog
 import android.os.Bundle
-import android.text.Html
+import android.util.Log
 import android.view.Window
 import android.view.WindowManager
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.ViewModelProviders
+import androidx.fragment.app.FragmentManager
+import androidx.fragment.app.FragmentTransaction
 import com.rifalcompany.comebackapps.R
 import com.rifalcompany.comebackapps.databinding.ActivityHomeBinding
-import com.rifalcompany.comebackapps.features.home.viewmodel.HomeViewModel
-import com.rifalcompany.comebackapps.utils.CommonUtils
+import com.rifalcompany.comebackapps.features.home.ui.fragment.HomeFragment
+import com.rifalcompany.comebackapps.features.home.ui.fragment.SettingFragment
+import com.rifalcompany.comebackapps.pref.Pref
+import com.rifalcompany.comebackapps.pref.PrefConst
+import nl.joery.animatedbottombar.AnimatedBottomBar
+
 
 class HomeActivity : AppCompatActivity() {
     private lateinit var binding: ActivityHomeBinding
-    private var loadingDialog: Dialog? = null
-
-    private val viewModel: HomeViewModel by lazy {
-        ViewModelProviders.of(this).get(HomeViewModel::class.java)
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -30,34 +28,55 @@ class HomeActivity : AppCompatActivity() {
         val window: Window = this.window
         window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
         window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
-        window.statusBarColor = ContextCompat.getColor(this, com.airbnb.lottie.R.color.background_floating_material_dark)
+        window.statusBarColor = ContextCompat.getColor(
+            this,
+            com.airbnb.lottie.R.color.background_floating_material_dark
+        )
 
+        val fragmentManager: FragmentManager = supportFragmentManager
+        val fragmentTransaction: FragmentTransaction = fragmentManager.beginTransaction()
+        val homeFragment = HomeFragment()
+        fragmentTransaction.replace(R.id.fl_home, homeFragment)
+        fragmentTransaction.addToBackStack(null)
+        fragmentTransaction.commit()
 
-        binding.btnHome.setOnClickListener {
-            showLoading(getString(R.string.loading_text))
-            var toInt: Int? = null
-            try {
-                toInt = binding.etHome.text.toString().toInt()
-            }catch (e: Exception){
-                hideLoading()
-                Toast.makeText(this, "" + e, Toast.LENGTH_SHORT).show()
-            }
+        binding.bottomBar.setOnTabSelectListener(object : AnimatedBottomBar.OnTabSelectListener {
+            override fun onTabSelected(
+                lastIndex: Int,
+                lastTab: AnimatedBottomBar.Tab?,
+                newIndex: Int,
+                newTab: AnimatedBottomBar.Tab
+            ) {
+                val fragmentManager: FragmentManager = supportFragmentManager
+                val fragmentTransaction: FragmentTransaction = fragmentManager.beginTransaction()
+                val homeFragment = HomeFragment()
+                val settingFragment = SettingFragment()
 
-            toInt?.let { it1 -> viewModel.getPokemonVM(it1) }
-            viewModel.getPokemonModel().observe(this){
-                hideLoading()
-                if (it != null) {
-                    binding.tvHome.text = Html.fromHtml(Html.fromHtml(it.keterangan).toString())
+                Log.d("bottom_bar", "Selected index: $newIndex, title: ${newTab.title}")
+
+                if (newIndex == 0) {
+                    fragmentTransaction.replace(R.id.fl_home, homeFragment)
+                } else if (newIndex == 1) {
+                    fragmentTransaction.replace(R.id.fl_home, settingFragment)
                 }
+                fragmentTransaction.addToBackStack(null)
+                fragmentTransaction.commit()
             }
-        }
+
+            // An optional method that will be fired whenever an already selected tab has been selected again.
+            override fun onTabReselected(index: Int, tab: AnimatedBottomBar.Tab) {
+                Log.d("bottom_barxxx", "Reselected index: $index, title: ${tab.title}")
+            }
+        })
     }
 
-    private fun showLoading(loadingText: String) {
-        loadingDialog = CommonUtils.showLoadingDialog(this, loadingText)
-    }
+    override fun onBackPressed() {
+//        val fragment = supportFragmentManager.findFragmentById(R.id.fl_home)
+//        if (fragment is SettingFragment){
+//            //
+//        }else{
+//            super.onBackPressed()
+//        }
 
-    private fun hideLoading() {
-        loadingDialog?.cancel()
     }
 }

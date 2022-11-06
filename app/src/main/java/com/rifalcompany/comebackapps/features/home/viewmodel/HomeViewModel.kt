@@ -49,13 +49,11 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 .subscribeWith(object : DisposableSingleObserver<PokemonModel>() {
                     override fun onSuccess(t: PokemonModel) {
                             pokemonModel.value = t
-                            isLoading?.value = false
                     }
 
                     override fun onError(e: Throwable) {
                         when (e) {
                             is HttpException -> {
-                                isLoading?.value = false
                                 val errorBody = e.response()?.errorBody()
                                 Toast.makeText(context, ""+e.message()+" " +e.response(), Toast.LENGTH_SHORT).show()
                                 val gson = Gson()
@@ -68,10 +66,10 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                             }
                             is SocketException, is UnknownHostException, is SocketTimeoutException -> {
                                 isConnectionTimeout.postValue(true)
-                                isLoading?.value = false
+                                Toast.makeText(context, "Invalid Connection.", Toast.LENGTH_SHORT).show()
                             }
                             else -> {
-
+                                Toast.makeText(context, ""+e, Toast.LENGTH_SHORT).show()
                             }
                         }
                     }
